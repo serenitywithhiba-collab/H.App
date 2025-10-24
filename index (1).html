@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>HAI v9.6.1 — Brand</title>
+  <meta name="description" content="HAI v9.6.1 — Brand-skinned, bilingual, admin-first clinical prototype with camera snapshots, analytics, exports.">
+  <link rel="icon" href="assets/logo.svg">
+  <link rel="stylesheet" href="assets/styles.css">
+</head>
+<body>
+  <header>
+    <div></div>
+    <div class="center"><img src="assets/logo.svg" alt="Laboratoire Hibalogique" style="height:34px"></div>
+    <div class="right">
+      <button class="lang-toggle" id="langBtn" onclick="setLang(LANG==='en'?'fr':'en')">FR</button>
+    </div>
+  </header>
+
+  <!-- LOGIN -->
+  <main class="container" id="login">
+    <div class="grid cards">
+      <div class="card">
+        <h3 id="loginTitle">Login / Connexion</h3>
+        <label class="small" id="loginLabel">Access Code / Code d’accès</label>
+        <input id="pass" class="input" placeholder="4+ chars">
+        <div class="row" style="margin-top:8px">
+          <button class="btn" onclick="login(document.getElementById('pass').value)">Enter</button>
+          <button class="btn-ghost" onclick="setLang(LANG==='en'?'fr':'en')">EN/FR</button>
+        </div>
+        <p class="small">Demo gate only (local). Remplacez par une authentification réelle au besoin.</p>
+      </div>
+    </div>
+  </main>
+
+  <!-- APP -->
+  <main class="container" id="app" style="display:none">
+    <div class="tabbar">
+      <div class="tab active" id="tab-admin" onclick="STATE.tab='admin'; render()">Admin</div>
+      <div class="tab" id="tab-session" onclick="STATE.tab='session'; render()">Session</div>
+      <div class="tab" id="tab-analytics" onclick="STATE.tab='analytics'; render()">Analytics</div>
+    </div>
+
+    <!-- ADMIN -->
+    <section id="panel-admin" class="grid cards">
+      <div class="card">
+        <h3 id="lblStudy">Study Name</h3>
+        <input id="study" class="input" placeholder="">
+        <div class="row">
+          <div style="flex:1"><label class="small" id="lblClient">Client</label><input id="client" class="input"></div>
+          <div style="flex:1"><label class="small" id="lblProduct">Product</label><input id="product" class="input"></div>
+        </div>
+        <div class="row">
+          <div style="flex:1"><label class="small" id="lblBatch">Batch #</label><input id="batch" class="input"></div>
+          <div style="flex:1"><label class="small" id="lblInternal">Internal Code</label><input id="internal" class="input"></div>
+        </div>
+        <label class="small" id="lblType">Product Type</label><input id="type" class="input">
+        <div class="row" style="margin-top:10px">
+          <button class="btn-ghost" id="btnTemplate" onclick="useTemplate()">Use Template</button>
+          <button class="btn" id="btnCreate" onclick="onCreate()">Create</button>
+          <input type="file" id="importFile" style="display:none" accept="application/json" onchange="importDB(this.files[0])">
+          <button class="btn-ghost" onclick="document.getElementById('importFile').click()">Import DB</button>
+          <button class="btn-ghost" onclick="exportDB()">Export DB</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Studies</h3>
+        <table class="table">
+          <thead><tr><th>Study</th><th>Participants</th><th>Actions</th></tr></thead>
+          <tbody id="studiesBody"></tbody>
+        </table>
+      </div>
+
+      <div class="card">
+        <h3>Participants</h3>
+        <div class="row">
+          <input id="pname" class="input" placeholder="Name (optional)">
+          <button class="btn" onclick="addParticipant()">Add</button>
+        </div>
+        <table class="table" style="margin-top:8px">
+          <thead><tr><th>Code</th><th>Name</th><th>Open</th></tr></thead>
+          <tbody id="partBody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- SESSION -->
+    <section id="panel-session" style="display:none">
+      <div class="grid cards">
+        <div class="card">
+          <div class="row" style="justify-content:space-between;align-items:center">
+            <h3 id="sessionStudy">—</h3>
+            <div class="row">
+              <button class="btn-ghost" onclick="openICF()">Open ICF</button>
+              <button class="btn-ghost" onclick="sessionResume()">Resume</button>
+              <button class="btn" onclick="sessionExit()">Exit & Save</button>
+            </div>
+          </div>
+          <div class="small">Current participant: <strong id="currentCode">Select a participant</strong></div>
+        </div>
+
+        <div class="card">
+          <h3>Camera</h3>
+          <div class="camera-wrap">
+            <video id="video" class="camera" autoplay playsinline></video>
+            <div class="dual-egg"><div class="egg"></div><div class="egg"></div></div>
+          </div>
+          <div class="row" style="margin-top:8px">
+            <button class="btn" onclick="startCam()">Start</button>
+            <button class="btn-ghost" onclick="stopCam()">Stop</button>
+            <button class="btn-ghost" onclick="snapshot()">Snapshot</button>
+          </div>
+          <div id="gallery" class="gallery"></div>
+        </div>
+
+        <div class="card">
+          <h3>Dermatology Metrics (0–100)</h3>
+          <div class="row">
+            <div style="flex:1">
+              <label>Wrinkles</label><input id="m_Wrinkles" class="metric" type="range" min="0" max="100" value="0">
+              <label>Redness</label><input id="m_Redness" class="metric" type="range" min="0" max="100" value="0">
+              <label>Dryness</label><input id="m_Dryness" class="metric" type="range" min="0" max="100" value="0">
+              <label>Comedones</label><input id="m_Comedones" class="metric" type="range" min="0" max="100" value="0">
+            </div>
+            <div style="flex:1">
+              <label>Pores</label><input id="m_Pores" class="metric" type="range" min="0" max="100" value="0">
+              <label>Hydration</label><input id="m_Hydration" class="metric" type="range" min="0" max="100" value="0">
+              <label>Brightness</label><input id="m_Brightness" class="metric" type="range" min="0" max="100" value="0">
+              <label>Hyperpigmentation</label><input id="m_Hyperpigmentation" class="metric" type="range" min="0" max="100" value="0">
+            </div>
+          </div>
+          <div class="row" style="margin-top:8px"><button class="btn" onclick="saveScores()">Save</button></div>
+        </div>
+
+        <div class="card">
+          <h3>Colored Chart</h3>
+          <div class="chart"><canvas id="chart"></canvas></div>
+          <div class="row" style="margin-top:8px">
+            <button class="btn" onclick="(function(){const s=getCurrentStudy(); if(s) exportExcel(s);})()">Excel</button>
+            <button class="btn-ghost" onclick="(function(){const s=getCurrentStudy(); if(s) exportPDF(s);})()">PDF</button>
+            <button class="btn-ghost" onclick="(function(){const s=getCurrentStudy(); if(s) exportWord(s);})()">Word</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ANALYTICS -->
+    <section id="panel-analytics" style="display:none">
+      <div class="grid cards">
+        <div class="card">
+          <h3>Averages</h3>
+          <div class="chart"><canvas id="chart2"></canvas></div>
+          <div id="avgStats" class="row" style="margin-top:8px"></div>
+        </div>
+        <div class="card">
+          <h3>Severity Distribution</h3>
+          <div id="distStats" class="row"></div>
+        </div>
+        <div class="card">
+          <h3>Database</h3>
+          <input type="file" id="importFile2" style="display:none" accept="application/json" onchange="importDB(this.files[0])">
+          <div class="row" style="margin-top:8px">
+            <button class="btn-ghost" onclick="document.getElementById('importFile2').click()">Import DB</button>
+            <button class="btn-ghost" onclick="exportDB()">Export DB</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ICF Modal -->
+    <div class="modal" id="icf"><div class="sheet"></div></div>
+  </main>
+
+  <script src="assets/app.js"></script>
+  <script>
+    // helper for exports
+    function getCurrentStudy(){ const db=JSON.parse(localStorage.getItem('hai_v9_6_1_db')||'{}'); return (db.studies||[]).find(x=>x.id===STATE.studyId)||null; }
+  </script>
+</body>
+</html>
